@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrando presença...</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+            background: var(--fundo);
+        }
+
+        .reg-card {
+            background: var(--branco);
+            border-radius: 20px;
+            border: 1px solid var(--borda);
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: var(--sombra-lg);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reg-icon {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700;
+        }
+
+        .reg-icon.carregando { background: var(--azul-claro);      color: var(--azul);     }
+        .reg-icon.sucesso    { background: var(--verde-claro);      color: var(--verde);    }
+        .reg-icon.duplicado  { background: var(--amarelo-claro);    color: #8a6d00;         }
+        .reg-icon.erro       { background: var(--vermelho-claro);   color: var(--vermelho); }
+
+        .reg-nome {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            color: var(--preto);
+            margin-bottom: 5px;
+        }
+
+        .reg-info {
+            font-size: 0.85rem;
+            color: var(--texto-fraco);
+            margin-bottom: 16px;
+        }
+
+        .reg-badge {
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 7px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .reg-badge.sucesso   { background: var(--verde-claro);    color: var(--verde);    }
+        .reg-badge.duplicado { background: var(--amarelo-claro);  color: #8a6d00;         }
+        .reg-badge.erro      { background: var(--vermelho-claro); color: var(--vermelho); }
+
+        .reg-horario {
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: var(--texto-fraco);
+            background: var(--fundo);
+            border: 1px solid var(--borda);
+            border-radius: var(--radius-xs);
+            padding: 4px 10px;
+            display: inline-block;
+            margin-bottom: 18px;
+        }
+
+        .reg-escola {
+            font-size: 0.72rem;
+            color: #bbb;
+            margin-top: 10px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .reg-fora {
+            font-size: 0.82rem;
+            color: #8a6d00;
+            background: var(--amarelo-claro);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="reg-card" id="card">
+        <div class="reg-icon carregando">⏳</div>
+        <p class="reg-nome">Aguarde...</p>
+        <p class="reg-info">Verificando presença</p>
+        <p class="reg-escola">Colégio Antônio Costa</p>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        function agora() {
+            return new Date().toLocaleTimeString("pt-BR", {
+                hour: "2-digit", minute: "2-digit", second: "2-digit"
+            });
+        }
+
+        function hoje() {
+            return new Date().toISOString().split("T")[0];
+        }
+
+        function mostrar({ estado, nome, turma, turno, extra }) {
+            const icones = { sucesso: "✓", duplicado: "!", erro: "✕" };
+            const textos = {
+                sucesso:   "Presença registrada com sucesso!",
+                duplicado: "Você já registrou presença neste turno.",
+                erro:      "Aluno não encontrado no sistema.",
+            };
+
+            document.getElementById("card").innerHTML = `
+                <div class="reg-icon ${estado}">${icones[estado]}</div>
+                <p class="reg-nome">${nome || "—"}</p>
+                <p class="reg-info">${turma ? `Turma: ${turma} — ${turno}` : ""}</p>
+                <span class="reg-badge ${estado}">${textos[estado]}</span><br>
+                ${estado === "sucesso" ? `<span class="reg-horario">⏰ ${agora()}</span><br>` : ""}
+                ${extra ? `<div class="reg-fora">${extra}</div>` : ""}
+                <p class="reg-escola">Colégio Antônio Costa</p>
+            `;
+        }
+
+        async function registrar() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get("id");
+
+            if (!id) {
+                mostrar({ estado: "erro" });
+                return;
+            }
+
+            // Verifica turno ativo
+            const turno = turnoAtual();
+            if (!turno) {
+                document.getElementById("card").innerHTML = `
+                    <div class="reg-icon duplicado">🌙</div>
+                    <p class="reg-nome">Fora do horário</p>
+                    <p class="reg-info">Não há turno ativo no momento.</p>
+                    <div class="reg-fora">O registro de presença só é permitido durante os turnos de aula.</div>
+                    <p class="reg-escola">Colégio Antônio Costa</p>
+                `;
+                return;
+            }
+
+            try {
+                // Busca aluno
+                const { data: aluno, error: errAluno } = await db
+                    .from("alunos")
+                    .select("id, nome, turma, turno")
+                    .eq("id", id)
+                    .single();
+
+                if (errAluno || !aluno) {
+                    mostrar({ estado: "erro" });
+                    return;
+                }
+
+                // Verifica duplicata no turno
+                const { inicio, fim } = intervaloPorTurno(turno);
+                const { data: existe } = await db
+                    .from("presencas")
+                    .select("id")
+                    .eq("aluno_id", id)
+                    .gte("horario_chegada", inicio)
+                    .lte("horario_chegada", fim);
+
+                if (existe && existe.length > 0) {
+                    mostrar({ estado: "duplicado", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
+                    return;
+                }
+
+                // Insere presença
+                const { error: errIns } = await db
+                    .from("presencas")
+                    .insert([{ aluno_id: id }]);
+
+                if (errIns) throw errIns;
+
+                mostrar({ estado: "sucesso", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
+
+            } catch (err) {
+                console.error(err);
+                mostrar({ estado: "erro" });
+            }
+        }
+
+        registrar();
+    </script>
+</body>
+</html>

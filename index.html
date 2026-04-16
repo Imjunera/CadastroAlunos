@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro — Colégio Antônio Costa</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script src="config.js" defer></script>
+    <script src="notifications.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-brand">
+        <span class="header-brand-nome">🏫 Colégio Antônio Costa</span>
+        <span class="header-brand-sub">Sistema de Gestão Escolar</span>
+    </div>
+    <nav class="header-nav">
+        <a href="index.html" class="ativo">Cadastro</a>
+        <a href="leitor.html">Leitor</a>
+    </nav>
+</header>
+
+<div class="container fade-in">
+
+    <div class="page-header">
+        <h1 class="page-title">Alunos</h1>
+        <p class="page-sub">Gerencie os alunos cadastrados na escola.</p>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">Total de alunos</div>
+            <div class="stat-value" id="totalAlunos">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Presentes hoje</div>
+            <div class="stat-value" id="presentesHoje">—</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-title">✏️ <span id="tituloForm">Novo aluno</span></div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="nome">Nome completo</label>
+                <input type="text" id="nome" placeholder="Ex: Lucas Oliveira" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="idade">Idade</label>
+                <input type="number" id="idade" placeholder="Ex: 16" min="1" max="99">
+            </div>
+            <div class="form-group">
+                <label for="turma">Turma</label>
+                <input type="text" id="turma" placeholder="Ex: 3A" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="turno">Turno</label>
+                <select id="turno">
+                    <option value="">Selecione</option>
+                    <option value="Manhã">Manhã — 06:45 às 13:00</option>
+                    <option value="Tarde">Tarde — 13:00 às 18:00</option>
+                    <option value="Noite">Noite — 19:00 às 00:00</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" id="btnSalvar" onclick="cadastrar()">✅ Salvar aluno</button>
+            <button class="btn btn-secondary" onclick="limparCampos()">✕ Cancelar</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="busca" placeholder="Buscar por nome..." oninput="listar()">
+        </div>
+        <div class="toolbar-actions">
+            <button class="btn btn-success btn-sm" onclick="gerarRelatorioPresencas()">📄 Relatório de Presenças</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmarApagarTodos()">🗑️ Apagar todos</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Idade</th>
+                    <th>Turma</th>
+                    <th>Turno</th>
+                    <th>QR Code</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="listaAlunos">
+                <tr><td colspan="6">
+                    <div class="empty"><div class="empty-icon">⏳</div><p>Carregando...</p></div>
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</body>
+</html>
