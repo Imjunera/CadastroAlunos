@@ -46,23 +46,37 @@ a { color: inherit; }
 
 /* ===================== HEADER ===================== */
 .header {
-    background: var(--verde);
+    background: linear-gradient(90deg, var(--verde), var(--azul));
     color: #fff;
-    height: var(--header-h);
+    height: 70px;
     padding: 0 2rem;
+    border-bottom: 3px solid var(--amarelo);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 200;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 
 .header-brand {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    background: #fff;
+    padding: 3px;
+    border-radius: 50%;
 }
 
 .header-brand-nome {
@@ -81,23 +95,50 @@ a { color: inherit; }
 
 .header-nav {
     display: flex;
-    gap: 4px;
-    align-items: center;
+    gap: 8px;
+}
+
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transform: translateY(-1px);
+    line-height: 1.1;
+}
+
+.header-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.header-sub {
+    font-size: 0.7rem;
+    opacity: 0.75;
 }
 
 .header-nav a {
-    color: rgba(255,255,255,0.75);
     text-decoration: none;
+    color: rgba(255,255,255,0.75);
     font-size: 0.85rem;
-    font-weight: 500;
     padding: 6px 14px;
     border-radius: 20px;
-    transition: var(--transition);
-    white-space: nowrap;
+    transition: 0.2s;
 }
 
-.header-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
-.header-nav a.ativo { background: rgba(255,255,255,0.18); color: #fff; }
+/* HOVER */
+.header-nav a:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+/* ATIVO */
+.header-nav a.ativo {
+    background: #fff;
+    color: var(--verde);
+    font-weight: 600;
+}
 
 /* ===================== CONTAINER ===================== */
 .container {
@@ -390,7 +431,6 @@ tbody td {
 .qr-img {
     width: 64px;
     height: 64px;
-    border-radius: var(--radius-xs);
     border: 1px solid var(--borda);
     object-fit: cover;
 }
