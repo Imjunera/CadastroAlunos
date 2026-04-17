@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise — Colégio Antônio Costa</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="config.js" defer></script>
+    <script src="Notifications.js" defer></script>
+    <script src="analise.js" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <img src="logo.png" class="logo" alt="Logo Colégio Antônio Costa">
+        <div class="header-text">
+            <span class="header-title">Colégio Estadual Desembargador</span>
+            <span class="header-sub">Antônio F. F. da Costa — Icaraíma / PR</span>
+        </div>
+    </div>
+    <nav class="header-nav">
+        <a href="index.html">Cadastro</a>
+        <a href="leitor.html">Leitor</a>
+        <a href="historico.html">Histórico</a>
+        <a href="analise.html" class="ativo">Análise</a>
+    </nav>
+</header>
+
+<div class="container fade-in">
+
+    <div class="page-header">
+        <h1 class="page-title">Painel de Análise</h1>
+        <p class="page-sub">Frequência, atrasos e desempenho por aluno.</p>
+    </div>
+
+    <!-- Filtros de período -->
+    <div class="toolbar" style="margin-bottom:1.5rem;">
+        <div class="search-wrap" style="gap:10px;flex-wrap:wrap;">
+            <label style="font-size:0.85rem;color:var(--texto-fraco);">De:</label>
+            <input type="date" id="filtroInicio" style="padding:6px 10px;border:1px solid var(--borda);border-radius:8px;background:var(--card);color:var(--texto);font-size:0.85rem;">
+            <label style="font-size:0.85rem;color:var(--texto-fraco);">Até:</label>
+            <input type="date" id="filtroFim" style="padding:6px 10px;border:1px solid var(--borda);border-radius:8px;background:var(--card);color:var(--texto);font-size:0.85rem;">
+        </div>
+        <div class="toolbar-actions">
+            <select id="filtroTurno" class="select-filtro" onchange="carregarAnalise()">
+                <option value="">Todos os turnos</option>
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="carregarAnalise()">🔍 Filtrar</button>
+            <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">✕ Limpar</button>
+        </div>
+    </div>
+
+    <!-- Stats globais -->
+    <div class="stats-row" id="statsGlobais">
+        <div class="stat-card">
+            <div class="stat-label">Total de presenças</div>
+            <div class="stat-value" id="statTotal">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total de atrasos</div>
+            <div class="stat-value" id="statAtrasos" style="color:var(--danger,#e53e3e);">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Taxa de pontualidade</div>
+            <div class="stat-value" id="statPontualidade">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Alunos distintos</div>
+            <div class="stat-value" id="statAlunos">—</div>
+        </div>
+    </div>
+
+    <!-- Gráficos — linha 1 -->
+    <div class="analise-grid-2">
+        <div class="card">
+            <div class="card-title">📈 Presenças ao longo do tempo</div>
+            <div class="chart-wrap">
+                <canvas id="chartTempo"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">🥧 Presentes vs Atrasados</div>
+            <div class="chart-wrap" style="max-height:260px;">
+                <canvas id="chartPizza"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos — linha 2 -->
+    <div class="analise-grid-2" style="margin-top:1.2rem;">
+        <div class="card">
+            <div class="card-title">🌗 Presenças por turno</div>
+            <div class="chart-wrap">
+                <canvas id="chartTurno"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">⚠ Atrasos por turno</div>
+            <div class="chart-wrap">
+                <canvas id="chartAtrasoTurno"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frequência por aluno -->
+    <div class="card" style="margin-top:1.2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
+            <div class="card-title" style="margin:0;">👤 Frequência por aluno</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="buscaAluno" placeholder="Buscar aluno..." oninput="renderTabelaAlunos()"
+                    style="padding:5px 10px;border:1px solid var(--borda);border-radius:8px;background:var(--card);color:var(--texto);font-size:0.83rem;width:180px;">
+                <select id="ordenarPor" onchange="renderTabelaAlunos()"
+                    style="padding:5px 8px;border:1px solid var(--borda);border-radius:8px;background:var(--card);color:var(--texto);font-size:0.83rem;">
+                    <option value="presencas">↓ Presenças</option>
+                    <option value="atrasos">↓ Atrasos</option>
+                    <option value="nome">A–Z</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>Turma</th>
+                        <th>Turno</th>
+                        <th>Presenças</th>
+                        <th>Atrasos</th>
+                        <th>Pontualidade</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaAlunos">
+                    <tr><td colspan="7">
+                        <div class="empty"><div class="empty-icon">⏳</div><p>Carregando...</p></div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

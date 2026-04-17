@@ -1,4 +1,20 @@
-// leitor.js v2
+// leitor.js v3 — controle de presença com detecção de atraso
+
+// ===================== LIMITES DE ATRASO POR TURNO =====================
+// Retorna minutos do dia equivalente ao limite de atraso
+const LIMITES_ATRASO = {
+    "Manhã": 7 * 60 + 45,   // 07:45
+    "Tarde": 13 * 60 + 15,  // 13:15
+    "Noite": 19 * 60 + 15,  // 19:15
+};
+
+function calcularStatus(turnoAluno) {
+    const agora = new Date();
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    const limite = LIMITES_ATRASO[turnoAluno];
+    if (limite === undefined) return "presente";
+    return minutosAgora <= limite ? "presente" : "atrasado";
+}
 
 // ===================== DATA / RELÓGIO =====================
 function atualizarRelogio() {
@@ -13,7 +29,6 @@ function atualizarRelogio() {
     const str  = hoje.toLocaleDateString("pt-BR", opts);
     document.getElementById("dataHoje").innerText =
         str.charAt(0).toUpperCase() + str.slice(1);
-
     atualizarRelogio();
     setInterval(atualizarRelogio, 1000);
 })();
@@ -36,22 +51,16 @@ function atualizarTurnoBanner() {
     }
 }
 
-// Chave no localStorage para saber qual turno foi limpo por último
 function chaveUltimoTurno() {
     const hoje = new Date().toISOString().split("T")[0];
     return `turno_limpo_${hoje}`;
 }
 
-// Verifica se o turno acabou e precisa limpar — roda a cada minuto
 async function verificarTrocaTurno() {
     atualizarTurnoBanner();
-
     const m = minutosDoDia();
-    // Momentos de virada: fim de Manhã (780), fim de Tarde (1080), fim de Noite (1440→0)
     const viradas = [13 * 60, 18 * 60, 24 * 60];
-
     for (const virada of viradas) {
-        // Janela de 1 minuto após a virada
         if (m >= virada && m < virada + 1) {
             const chave = chaveUltimoTurno() + "_" + virada;
             if (!localStorage.getItem(chave)) {
@@ -63,7 +72,6 @@ async function verificarTrocaTurno() {
 }
 
 async function limparPresencasTurnoAnterior(virada) {
-    // Determina o intervalo do turno que acabou
     const turnos = [
         { inicio: 6*60+45, fim: 13*60,  nome: "Manhã" },
         { inicio: 13*60,   fim: 18*60,  nome: "Tarde" },
@@ -71,16 +79,13 @@ async function limparPresencasTurnoAnterior(virada) {
     ];
     const turno = turnos.find(t => t.fim === virada);
     if (!turno) return;
-
     const { inicio, fim } = intervaloPorTurno(turno);
-
     try {
         const { error } = await db
             .from("presencas")
             .delete()
             .gte("horario_chegada", inicio)
             .lte("horario_chegada", fim);
-
         if (!error) {
             Notif.info(`Turno ${turno.nome} encerrado`, "Lista de presença foi limpa automaticamente.");
             carregarPresencas();
@@ -91,19 +96,23 @@ async function limparPresencasTurnoAnterior(virada) {
 }
 
 // ===================== MODAL =====================
-function mostrarModal({ tipo, nome, turma, turno }) {
+function mostrarModal({ tipo, nome, turma, turno, status }) {
     const cfg = {
-        sucesso:   { icon: "✓", texto: "Presença registrada!" },
+        sucesso:   { icon: status === "atrasado" ? "⚠" : "✓", texto: status === "atrasado" ? "Presença registrada — Atrasado!" : "Presença registrada!" },
         duplicado: { icon: "!", texto: "Já registrado neste turno." },
         erro:      { icon: "✕", texto: "Aluno não encontrado." },
     };
     const c = cfg[tipo] || cfg.erro;
 
-    document.getElementById("modalIcon").className  = `modal-icon ${tipo}`;
+    // Classe do ícone: usa "atrasado" como variante visual do sucesso
+    const iconClass = tipo === "sucesso" && status === "atrasado" ? "atrasado" : tipo;
+
+    document.getElementById("modalIcon").className  = `modal-icon ${iconClass}`;
     document.getElementById("modalIcon").innerText  = c.icon;
     document.getElementById("modalNome").innerText  = nome || "—";
+    document.getElementById("modalNome").className  = `modal-nome ${tipo === "sucesso" ? (status === "atrasado" ? "nome-atrasado" : "nome-presente") : ""}`;
     document.getElementById("modalInfo").innerText  = turma ? `Turma: ${turma} — ${turno}` : "";
-    document.getElementById("modalBadge").className = `modal-badge ${tipo}`;
+    document.getElementById("modalBadge").className = `modal-badge ${iconClass}`;
     document.getElementById("modalBadge").innerText = c.texto;
     document.getElementById("modalOverlay").style.display = "flex";
 
@@ -132,12 +141,16 @@ async function carregarPresencas() {
     const totalEl = document.getElementById("totalPresentes");
     const ultimaEl = document.getElementById("ultimaEntrada");
 
+    // Stats de atraso
+    const atrasadosEl = document.getElementById("totalAtrasados");
+
     if (!turno) {
-        tbody.innerHTML = `<tr><td colspan="3">
+        tbody.innerHTML = `<tr><td colspan="4">
             <div class="empty"><div class="empty-icon">🌙</div><p>Fora do horário de aulas.</p></div>
         </td></tr>`;
         totalEl.innerText = "—";
         ultimaEl.innerText = "—";
+        if (atrasadosEl) atrasadosEl.innerText = "—";
         return;
     }
 
@@ -146,17 +159,21 @@ async function carregarPresencas() {
     try {
         const { data, error } = await db
             .from("presencas")
-            .select("id, horario_chegada, alunos(nome, turma, turno)")
+            .select("id, horario_chegada, status, alunos(nome, turma, turno)")
             .gte("horario_chegada", inicio)
             .lte("horario_chegada", fim)
             .order("horario_chegada", { ascending: false });
 
         if (error) throw error;
 
-        totalEl.innerText = data ? data.length : 0;
+        const total = data ? data.length : 0;
+        const atrasados = data ? data.filter(p => p.status === "atrasado").length : 0;
+
+        totalEl.innerText = total;
+        if (atrasadosEl) atrasadosEl.innerText = atrasados;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3">
+            tbody.innerHTML = `<tr><td colspan="4">
                 <div class="empty"><div class="empty-icon">📋</div><p>Nenhuma presença ainda.</p></div>
             </td></tr>`;
             ultimaEl.innerText = "—";
@@ -167,15 +184,24 @@ async function carregarPresencas() {
 
         tbody.innerHTML = data.map((p, i) => {
             const a = p.alunos;
+            const isAtrasado = p.status === "atrasado";
             const tc = a?.turno === "Manhã" ? "badge-verde"
                      : a?.turno === "Tarde" ? "badge-amarelo"
                      : a?.turno === "Noite" ? "badge-noite"
                      : "badge-cinza";
             return `
-            <tr class="${i === 0 ? "entrada-nova" : ""}">
-                <td><strong>${escHtml(a?.nome ?? "—")}</strong></td>
+            <tr class="${i === 0 ? "entrada-nova" : ""} ${isAtrasado ? "linha-atrasado" : "linha-presente"}">
+                <td>
+                    <strong class="${isAtrasado ? "nome-atrasado" : "nome-presente"}">${escHtml(a?.nome ?? "—")}</strong>
+                    ${isAtrasado ? `<span class="tag-atraso">Atrasado</span>` : ""}
+                </td>
                 <td>${a?.turma ? `<span class="badge ${tc}">${escHtml(a.turma)}</span>` : "—"}</td>
                 <td><span class="horario-chip">${formatarHora(p.horario_chegada)}</span></td>
+                <td>
+                    <span class="status-chip ${isAtrasado ? "status-atrasado" : "status-presente"}">
+                        ${isAtrasado ? "⚠ Atrasado" : "✓ Presente"}
+                    </span>
+                </td>
             </tr>`;
         }).join("");
 
@@ -194,39 +220,28 @@ async function onScanSuccess(texto) {
 
     let id = null;
 
-    // Tenta extrair de URL (?id=...)
     try {
         const url = new URL(texto);
         id = url.searchParams.get("id");
-    } catch { /* não é URL */ }
+    } catch { }
 
-    // Tenta prefixo "ID: xxx"
     if (!id) {
         const m = texto.match(/ID[:\s]+(\S+)/i);
         if (m) id = m[1];
     }
 
-    // Tenta UUID puro (fallback)
     if (!id) {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(texto.trim())) {
-            id = texto.trim();
-        }
+        if (uuidRegex.test(texto.trim())) id = texto.trim();
     }
 
-    if (!id) {
-        console.warn("QR lido mas ID não encontrado:", texto);
-        return;
-    }
-
-    // Evita re-scan do mesmo ID, mas só após sucesso
+    if (!id) { console.warn("QR lido mas ID não encontrado:", texto); return; }
     if (id === ultimoId) return;
 
     registrando = true;
     const ok = await registrar(id);
     registrando = false;
 
-    // Só trava o re-scan se registrou com sucesso
     if (ok) {
         ultimoId = id;
         setTimeout(() => { ultimoId = null; }, 5000);
@@ -234,10 +249,7 @@ async function onScanSuccess(texto) {
 }
 
 async function registrar(id) {
-    // ❌ REMOVIDO: bloqueio por turno ativo
-
     try {
-        // Busca aluno
         const { data: aluno, error: errAluno } = await db
             .from("alunos")
             .select("id, nome, turma, turno")
@@ -247,10 +259,10 @@ async function registrar(id) {
         if (errAluno || !aluno) {
             mostrarModal({ tipo: "erro" });
             Notif.erro("Aluno não encontrado", "ID não corresponde a nenhum aluno.");
-            return;
+            return false;
         }
 
-        // Verifica duplicata no dia inteiro (não por turno)
+        // Verifica duplicata no dia inteiro
         const hoje = new Date().toISOString().split("T")[0];
         const { data: existe } = await db
             .from("presencas")
@@ -261,17 +273,26 @@ async function registrar(id) {
 
         if (existe && existe.length > 0) {
             mostrarModal({ tipo: "duplicado", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
-            return;
+            return false;
         }
 
-        // Insere presença
+        // Calcula status de atraso com base no turno do aluno
+        const status = calcularStatus(aluno.turno);
+
         const { error: errIns } = await db
             .from("presencas")
-            .insert([{ aluno_id: id }]);
+            .insert([{ aluno_id: id, status }]);
 
         if (errIns) throw errIns;
 
-        mostrarModal({ tipo: "sucesso", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
+        mostrarModal({ tipo: "sucesso", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno, status });
+
+        if (status === "atrasado") {
+            Notif.aviso(`${aluno.nome} — Atrasado`, `Chegou após o limite do turno ${aluno.turno}.`);
+        } else {
+            Notif.sucesso("Presença registrada", `${aluno.nome} chegou no horário.`);
+        }
+
         carregarPresencas();
         return true;
 
@@ -279,6 +300,7 @@ async function registrar(id) {
         console.error(err);
         Notif.erro("Erro ao registrar presença", err.message);
         mostrarModal({ tipo: "erro" });
+        return false;
     }
 }
 
@@ -295,10 +317,9 @@ async function gerarRelatorioPresencas() {
     try {
         let query = db
             .from("presencas")
-            .select("horario_chegada, alunos(nome, turma, turno)")
+            .select("horario_chegada, status, alunos(nome, turma, turno)")
             .order("horario_chegada", { ascending: true });
 
-        // Filtra pelo turno atual se houver
         if (turno) {
             const { inicio, fim } = intervaloPorTurno(turno);
             query = query.gte("horario_chegada", inicio).lte("horario_chegada", fim);
@@ -313,16 +334,17 @@ async function gerarRelatorioPresencas() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const dataFmt = new Date().toLocaleDateString("pt-BR");
+        const atrasados = (data || []).filter(p => p.status === "atrasado").length;
 
         doc.setFontSize(16);
         doc.text("Relatório de Presenças", 20, 20);
         doc.setFontSize(10);
-        doc.text(`Data: ${dataFmt}  |  Turno: ${turno?.nome ?? "Todos"}  |  Total: ${data?.length ?? 0}`, 20, 30);
+        doc.text(`Data: ${dataFmt}  |  Turno: ${turno?.nome ?? "Todos"}  |  Total: ${data?.length ?? 0}  |  Atrasos: ${atrasados}`, 20, 30);
 
         let y = 44;
         doc.setFont(undefined, "bold");
-        doc.text("Nome", 20, y); doc.text("Turma", 100, y);
-        doc.text("Turno", 140, y); doc.text("Horário", 170, y);
+        doc.text("Nome", 20, y); doc.text("Turma", 90, y);
+        doc.text("Horário", 140, y); doc.text("Status", 170, y);
         y += 5; doc.line(20, y, 195, y); y += 7;
         doc.setFont(undefined, "normal");
 
@@ -332,17 +354,17 @@ async function gerarRelatorioPresencas() {
                 hour: "2-digit", minute: "2-digit"
             });
             doc.setFontSize(9);
-            doc.text(String(a?.nome ?? "—").substring(0, 35), 20, y);
-            doc.text(String(a?.turma ?? "—"), 100, y);
-            doc.text(String(a?.turno ?? "—"), 140, y);
-            doc.text(hora, 170, y);
+            doc.text(String(a?.nome ?? "—").substring(0, 32), 20, y);
+            doc.text(String(a?.turma ?? "—"), 90, y);
+            doc.text(hora, 140, y);
+            doc.text(p.status === "atrasado" ? "Atrasado" : "Presente", 170, y);
             y += 7;
             if (y > 280) { doc.addPage(); y = 20; }
         });
 
         const hoje = new Date().toISOString().split("T")[0];
         doc.save(`presencas_${hoje}_${turno?.nome ?? "geral"}.pdf`);
-        Notif.sucesso("Relatório gerado!", `${data?.length ?? 0} presença(s) exportada(s).`);
+        Notif.sucesso("Relatório gerado!", `${data?.length ?? 0} presença(s), ${atrasados} atraso(s).`);
 
     } catch (err) {
         Notif.erro("Erro ao gerar relatório", err.message);
@@ -412,4 +434,4 @@ function escHtml(str) {
 atualizarTurnoBanner();
 carregarPresencas();
 verificarTrocaTurno();
-setInterval(verificarTrocaTurno, 60 * 1000); // checa a cada minuto
+setInterval(verificarTrocaTurno, 60 * 1000);

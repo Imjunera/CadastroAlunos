@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico — Colégio Antônio Costa</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="config.js" defer></script>
+    <script src="Notifications.js" defer></script>
+    <script src="historico.js" defer></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <img src="logo.png" class="logo" alt="Logo Colégio Antônio Costa">
+        <div class="header-text">
+            <span class="header-title">Colégio Estadual Desembargador</span>
+            <span class="header-sub">Antônio F. F. da Costa — Icaraíma / PR</span>
+        </div>
+    </div>
+    <nav class="header-nav">
+        <a href="index.html">Cadastro</a>
+        <a href="leitor.html">Leitor</a>
+        <a href="historico.html" class="ativo">Histórico</a>
+    </nav>
+</header>
+
+<div class="container fade-in">
+
+    <div class="page-header">
+        <h1 class="page-title">Histórico de Presenças</h1>
+        <p class="page-sub">Relatórios por dia e turno registrados no sistema.</p>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">Dias com registro</div>
+            <div class="stat-value" id="totalDias">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total de registros</div>
+            <div class="stat-value" id="totalRegistros">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Primeiro registro</div>
+            <div class="stat-value pequeno" id="primeiroDia">—</div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="toolbar" style="margin-bottom:1.5rem;">
+        <div class="search-wrap">
+            <span class="search-icon">📅</span>
+            <input type="date" id="filtroData" oninput="renderHistorico()">
+        </div>
+        <div class="toolbar-actions">
+            <select id="filtroTurno" class="select-filtro" onchange="renderHistorico()">
+                <option value="">Todos os turnos</option>
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">✕ Limpar filtros</button>
+        </div>
+    </div>
+
+    <!-- Lista de dias -->
+    <div id="historicoContainer">
+        <div class="empty">
+            <div class="empty-icon">⏳</div>
+            <p>Carregando histórico...</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL DETALHE DO TURNO -->
+<div class="modal-overlay" id="modalOverlay" style="display:none;" onclick="fecharModalHist(event)">
+    <div class="modal-card" style="max-width:520px;width:95%;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <strong id="modalTituloHist" style="font-size:1.05rem;"></strong>
+            <button class="modal-fechar" onclick="document.getElementById('modalOverlay').style.display='none'" style="margin:0;">✕</button>
+        </div>
+        <table style="width:100%;font-size:0.88rem;">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Turma</th>
+                    <th>Horário</th>
+                </tr>
+            </thead>
+            <tbody id="modalListaHist"></tbody>
+        </table>
+        <div style="margin-top:1.2rem;display:flex;gap:8px;justify-content:flex-end;">
+            <button class="btn btn-success btn-sm" id="btnGerarPDF" onclick="gerarPDFDoModal()">📄 Gerar PDF</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -818,3 +818,257 @@ tbody td {
 
     .stat-value { font-size: 1.5rem; }
 }
+
+
+/* ===== HISTÓRICO — adicionar ao style.css ===== */
+
+/* Filtro de turno no toolbar */
+.select-filtro {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--texto);
+    font-size: 0.88rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.select-filtro:focus {
+    border-color: var(--primaria);
+}
+
+/* Card de dia */
+.hist-dia-card {
+    background: var(--card);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 1.2rem;
+    transition: box-shadow 0.2s;
+}
+.hist-dia-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+
+.hist-dia-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--borda);
+}
+.hist-dia-label {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--texto);
+}
+.hist-dia-sub {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--texto-fraco);
+    margin-top: 2px;
+    text-transform: capitalize;
+}
+.hist-dia-total {
+    font-size: 0.82rem;
+    color: var(--texto-fraco);
+    background: var(--fundo);
+    border: 1px solid var(--borda);
+    border-radius: 20px;
+    padding: 3px 10px;
+}
+
+/* Grid de turnos dentro de um dia */
+.hist-turnos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+/* Card de cada turno */
+.hist-turno-card {
+    background: var(--fundo);
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.hist-turno-card:hover {
+    background: var(--card);
+    border-color: var(--primaria);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.hist-turno-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.55rem;
+}
+.hist-turno-count {
+    font-size: 0.78rem;
+    color: var(--texto-fraco);
+    flex: 1;
+}
+.hist-pdf-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+    padding: 2px 8px !important;
+    font-size: 0.78rem !important;
+}
+.hist-turno-card:hover .hist-pdf-btn {
+    opacity: 1;
+}
+
+.hist-turno-preview {
+    font-size: 0.78rem;
+    color: var(--texto-fraco);
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== ADIÇÕES AO style.css — Atraso, Status e Análise ===== */
+
+/* ---------- Variável de cor de danger ---------- */
+:root {
+    --danger: #e53e3e;
+    --danger-light: #fff5f5;
+    --sucesso: #1a6641;
+    --sucesso-light: #f0fdf4;
+    --aviso: #d4a017;
+    --aviso-light: #fffbeb;
+}
+
+/* ---------- Linhas de tabela por status ---------- */
+.linha-atrasado {
+    background: var(--danger-light) !important;
+    border-left: 3px solid var(--danger);
+}
+.linha-presente {
+    background: transparent;
+}
+
+/* ---------- Nome colorido por status ---------- */
+.nome-presente {
+    color: var(--sucesso);
+}
+.nome-atrasado {
+    color: var(--danger);
+}
+
+/* ---------- Tag de atraso inline ---------- */
+.tag-atraso {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--danger);
+    background: var(--danger-light);
+    border: 1px solid var(--danger);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* ---------- Chip de status (coluna Status) ---------- */
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.status-presente {
+    background: var(--sucesso-light);
+    color: var(--sucesso);
+    border: 1px solid #b2f0c8;
+}
+.status-atrasado {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid #ffc3c3;
+}
+
+/* ---------- Modal: ícone atrasado ---------- */
+.modal-icon.atrasado {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 2px solid var(--danger);
+}
+.modal-badge.atrasado {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+/* ---------- Análise: grid de gráficos ---------- */
+.analise-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+@media (max-width: 768px) {
+    .analise-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ---------- Wrap do canvas ---------- */
+.chart-wrap {
+    position: relative;
+    width: 100%;
+    max-height: 300px;
+}
+.chart-wrap canvas {
+    max-height: 280px;
+}
+
+/* ---------- Barra de pontualidade ---------- */
+.pct-bar-wrap {
+    width: 80px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+.pct-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+.pct-bar-fill.pct-verde   { background: var(--sucesso); }
+.pct-bar-fill.pct-amarelo { background: var(--aviso); }
+.pct-bar-fill.pct-vermelho{ background: var(--danger); }
+
+.pct-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.pct-label.pct-verde   { color: var(--sucesso); }
+.pct-label.pct-amarelo { color: var(--aviso); }
+.pct-label.pct-vermelho{ color: var(--danger); }
+
+/* ---------- Select filtro (reutilizado) ---------- */
+.select-filtro {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--texto);
+    font-size: 0.88rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.select-filtro:focus { border-color: var(--primaria); }
