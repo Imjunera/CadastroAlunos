@@ -193,31 +193,48 @@ async function onScanSuccess(texto) {
     if (registrando) return;
 
     let id = null;
+
+    // Tenta extrair de URL (?id=...)
     try {
         const url = new URL(texto);
         id = url.searchParams.get("id");
-    } catch {
+    } catch { /* não é URL */ }
+
+    // Tenta prefixo "ID: xxx"
+    if (!id) {
         const m = texto.match(/ID[:\s]+(\S+)/i);
         if (m) id = m[1];
     }
 
-    if (!id || id === ultimoId) return;
-    ultimoId = id;
-    setTimeout(() => { ultimoId = null; }, 5000);
+    // Tenta UUID puro (fallback)
+    if (!id) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(texto.trim())) {
+            id = texto.trim();
+        }
+    }
+
+    if (!id) {
+        console.warn("QR lido mas ID não encontrado:", texto);
+        return;
+    }
+
+    // Evita re-scan do mesmo ID, mas só após sucesso
+    if (id === ultimoId) return;
 
     registrando = true;
-    await registrar(id);
+    const ok = await registrar(id);
     registrando = false;
+
+    // Só trava o re-scan se registrou com sucesso
+    if (ok) {
+        ultimoId = id;
+        setTimeout(() => { ultimoId = null; }, 5000);
+    }
 }
 
 async function registrar(id) {
-    // Verifica turno ativo
-    const turno = turnoAtual();
-    if (!turno) {
-        Notif.aviso("Fora do horário", "Não há turno ativo no momento.");
-        mostrarModal({ tipo: "erro", nome: "Fora do horário" });
-        return;
-    }
+    // ❌ REMOVIDO: bloqueio por turno ativo
 
     try {
         // Busca aluno
@@ -233,14 +250,14 @@ async function registrar(id) {
             return;
         }
 
-        // Verifica duplicata no turno atual
-        const { inicio, fim } = intervaloPorTurno(turno);
+        // Verifica duplicata no dia inteiro (não por turno)
+        const hoje = new Date().toISOString().split("T")[0];
         const { data: existe } = await db
             .from("presencas")
             .select("id")
             .eq("aluno_id", id)
-            .gte("horario_chegada", inicio)
-            .lte("horario_chegada", fim);
+            .gte("horario_chegada", hoje + "T00:00:00")
+            .lte("horario_chegada", hoje + "T23:59:59");
 
         if (existe && existe.length > 0) {
             mostrarModal({ tipo: "duplicado", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
@@ -256,6 +273,7 @@ async function registrar(id) {
 
         mostrarModal({ tipo: "sucesso", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
         carregarPresencas();
+        return true;
 
     } catch (err) {
         console.error(err);
