@@ -25,17 +25,15 @@
 
 <header class="header">
     <div class="header-left">
-        <img src="logo.png" class="logo">
-
+        <img src="logo.png" class="logo" alt="Logo Colégio Antônio Costa">
         <div class="header-text">
             <span class="header-title">Colégio Estadual Desembargador</span>
             <span class="header-sub">Antônio F. F. da Costa — Icaraíma / PR</span>
         </div>
     </div>
-
     <nav class="header-nav">
-        <a href="index.html" class="ativo">Cadastro</a>
-        <a href="leitor.html">Leitor</a>
+        <a href="index.html">Cadastro</a>
+        <a href="leitor.html" class="ativo">Leitor</a>
     </nav>
 </header>
 
@@ -46,13 +44,11 @@
         <p class="page-sub" id="dataHoje"></p>
     </div>
 
-    <!-- TURNO BANNER -->
     <div class="turno-banner" id="turnoBanner">
         <span class="turno-banner-txt" id="turnoTxt">Verificando turno...</span>
         <span class="horario-chip" id="relogioChip"></span>
     </div>
 
-    <!-- STATS -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-label">Presentes no turno</div>
@@ -77,10 +73,12 @@
             <div class="scanner-status" id="scannerStatus">
                 Clique no botão para ativar a câmera
             </div>
-            <button class="btn btn-primary" id="btnIniciar" onclick="iniciarCamera()">
+            <button class="btn btn-primary" id="btnIniciar" onclick="iniciarCamera()" style="width:100%;max-width:280px;">
                 📸 Ativar câmera
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="gerarRelatorioPresencas()">📄 Exportar presenças</button>
+            <button class="btn btn-secondary btn-sm" onclick="gerarRelatorioPresencas()" style="width:100%;max-width:280px;">
+                📄 Exportar presenças
+            </button>
         </div>
 
         <!-- PRESENÇAS -->

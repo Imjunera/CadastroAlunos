@@ -16,14 +16,12 @@
 
 <header class="header">
     <div class="header-left">
-        <img src="logo.png" class="logo">
-
+        <img src="logo.png" class="logo" alt="Logo Colégio Antônio Costa">
         <div class="header-text">
             <span class="header-title">Colégio Estadual Desembargador</span>
             <span class="header-sub">Antônio F. F. da Costa — Icaraíma / PR</span>
         </div>
     </div>
-
     <nav class="header-nav">
         <a href="index.html" class="ativo">Cadastro</a>
         <a href="leitor.html">Leitor</a>
@@ -59,56 +57,50 @@
                 <label for="idade">Idade</label>
                 <input type="number" id="idade" placeholder="Ex: 16" min="1" max="99">
             </div>
-<div class="form-group">
-    <label for="turma">Turma</label>
-    <select id="turma">
-        <option value="">Selecione a turma</option>
-
-        <optgroup label="6ª - 9ª Série">
-            <option value="6A">6º A</option>
-            <option value="6B">6º B</option>
-            <option value="6C">6º C</option>
-            <option value="6D">6º D</option>
-            <option value="7A">7º A</option>
-            <option value="7B">7º B</option>
-            <option value="7C">7º C</option>
-            <option value="7D">7º D</option>
-            <option value="8A">8º A</option>
-            <option value="8B">8º B</option>
-            <option value="8C">8º C</option>
-            <option value="8D">8º D</option>
-            <option value="9A">9º A</option>
-            <option value="9B">9º B</option>
-            <option value="9C">9º C</option>
-            <option value="9D">9º D</option>
-        </optgroup>
-
-        <optgroup label="Técnico de Sistemas">
-            <option value="1_TEC_SISTEMAS">1º Técnico de Sistemas</option>
-            <option value="2_TEC_SISTEMAS">2º Técnico de Sistemas</option>
-            <option value="3_TEC_SISTEMAS">3º Técnico de Sistemas</option>
-        </optgroup>
-
-        <optgroup label="Técnico Agronegócio">
-            <option value="1_TEC_AGRO">1º Técnico Agronegócio</option>
-            <option value="2_TEC_AGRO">2º Técnico Agronegócio</option>
-            <option value="3_TEC_AGRO">3º Técnico Agronegócio</option>
-        </optgroup>
-
-        <optgroup label="EMP">
-            <option value="1_EMP">1º EMP</option>
-            <option value="2_EMP">2º EMP</option>
-            <option value="3_EMP">3º EMP</option>
-        </optgroup>
-
-        <optgroup label="NEM">
-            <option value="1_NEM">1º NEM</option>
-            <option value="2_NEM">2º NEM</option>
-            <option value="3_NEM">3º NEM</option>
-        </optgroup>
-
-    </select>
-</div>
+            <div class="form-group">
+                <label for="turma">Turma</label>
+                <select id="turma">
+                    <option value="">Selecione a turma</option>
+                    <optgroup label="6ª - 9ª Série">
+                        <option value="6A">6º A</option>
+                        <option value="6B">6º B</option>
+                        <option value="6C">6º C</option>
+                        <option value="6D">6º D</option>
+                        <option value="7A">7º A</option>
+                        <option value="7B">7º B</option>
+                        <option value="7C">7º C</option>
+                        <option value="7D">7º D</option>
+                        <option value="8A">8º A</option>
+                        <option value="8B">8º B</option>
+                        <option value="8C">8º C</option>
+                        <option value="8D">8º D</option>
+                        <option value="9A">9º A</option>
+                        <option value="9B">9º B</option>
+                        <option value="9C">9º C</option>
+                        <option value="9D">9º D</option>
+                    </optgroup>
+                    <optgroup label="Técnico de Sistemas">
+                        <option value="1_TEC_SISTEMAS">1º Técnico de Sistemas</option>
+                        <option value="2_TEC_SISTEMAS">2º Técnico de Sistemas</option>
+                        <option value="3_TEC_SISTEMAS">3º Técnico de Sistemas</option>
+                    </optgroup>
+                    <optgroup label="Técnico Agronegócio">
+                        <option value="1_TEC_AGRO">1º Técnico Agronegócio</option>
+                        <option value="2_TEC_AGRO">2º Técnico Agronegócio</option>
+                        <option value="3_TEC_AGRO">3º Técnico Agronegócio</option>
+                    </optgroup>
+                    <optgroup label="EMP">
+                        <option value="1_EMP">1º EMP</option>
+                        <option value="2_EMP">2º EMP</option>
+                        <option value="3_EMP">3º EMP</option>
+                    </optgroup>
+                    <optgroup label="NEM">
+                        <option value="1_NEM">1º NEM</option>
+                        <option value="2_NEM">2º NEM</option>
+                        <option value="3_NEM">3º NEM</option>
+                    </optgroup>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="turno">Turno</label>
                 <select id="turno">
@@ -131,7 +123,7 @@
             <input type="text" id="busca" placeholder="Buscar por nome..." oninput="listar()">
         </div>
         <div class="toolbar-actions">
-            <button class="btn btn-success btn-sm" onclick="gerarRelatorioPresencas()">📄 Relatório de Presenças</button>
+            <button class="btn btn-success btn-sm" onclick="gerarRelatorioPresencas()">📄 Relatório</button>
             <button class="btn btn-danger btn-sm" onclick="confirmarApagarTodos()">🗑️ Apagar todos</button>
         </div>
     </div>

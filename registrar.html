@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Layout exclusivo desta página */
         body {
             display: flex;
             flex-direction: column;
@@ -16,96 +17,18 @@
             padding: 1.5rem;
             background: var(--fundo);
         }
-
-        .reg-card {
-            background: var(--branco);
-            border-radius: 20px;
-            border: 1px solid var(--borda);
-            padding: 2.5rem 2rem;
-            width: 100%;
-            max-width: 340px;
-            text-align: center;
-            box-shadow: var(--sombra-lg);
-            animation: fadeIn 0.3s ease;
-        }
-
-        .reg-icon {
-            width: 72px; height: 72px;
-            border-radius: 50%;
-            margin: 0 auto 18px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 28px; font-weight: 700;
-        }
-
-        .reg-icon.carregando { background: var(--azul-claro);      color: var(--azul);     }
-        .reg-icon.sucesso    { background: var(--verde-claro);      color: var(--verde);    }
-        .reg-icon.duplicado  { background: var(--amarelo-claro);    color: #8a6d00;         }
-        .reg-icon.erro       { background: var(--vermelho-claro);   color: var(--vermelho); }
-
-        .reg-nome {
-            font-family: var(--font-display);
-            font-size: 1.4rem;
-            color: var(--preto);
-            margin-bottom: 5px;
-        }
-
-        .reg-info {
-            font-size: 0.85rem;
-            color: var(--texto-fraco);
-            margin-bottom: 16px;
-        }
-
-        .reg-badge {
-            font-size: 0.875rem;
-            font-weight: 600;
-            padding: 7px 20px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-bottom: 16px;
-        }
-
-        .reg-badge.sucesso   { background: var(--verde-claro);    color: var(--verde);    }
-        .reg-badge.duplicado { background: var(--amarelo-claro);  color: #8a6d00;         }
-        .reg-badge.erro      { background: var(--vermelho-claro); color: var(--vermelho); }
-
-        .reg-horario {
-            font-family: 'Courier New', monospace;
-            font-size: 0.82rem;
-            color: var(--texto-fraco);
-            background: var(--fundo);
-            border: 1px solid var(--borda);
-            border-radius: var(--radius-xs);
-            padding: 4px 10px;
-            display: inline-block;
-            margin-bottom: 18px;
-        }
-
-        .reg-escola {
-            font-size: 0.72rem;
-            color: #bbb;
-            margin-top: 10px;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .reg-fora {
-            font-size: 0.82rem;
-            color: #8a6d00;
-            background: var(--amarelo-claro);
-            border-radius: var(--radius-sm);
-            padding: 8px 14px;
-            margin-top: 12px;
-        }
     </style>
 </head>
 <body>
+
     <div class="header-brand">
-    <img src="logo.png" class="logo">
-    <div>
-        <span class="header-brand-nome">Colégio Antônio Costa</span>
-        <span class="header-brand-sub">Sistema de Gestão Escolar</span>
+        <img src="logo.png" class="logo" alt="Logo Colégio Antônio Costa">
+        <div>
+            <span class="header-brand-nome">Colégio Antônio Costa</span>
+            <span class="header-brand-sub">Sistema de Gestão Escolar</span>
+        </div>
     </div>
-</div>
+
     <div class="reg-card" id="card">
         <div class="reg-icon carregando">⏳</div>
         <p class="reg-nome">Aguarde...</p>
@@ -153,7 +76,6 @@
                 return;
             }
 
-            // Verifica turno ativo
             const turno = turnoAtual();
             if (!turno) {
                 document.getElementById("card").innerHTML = `
@@ -167,7 +89,6 @@
             }
 
             try {
-                // Busca aluno
                 const { data: aluno, error: errAluno } = await db
                     .from("alunos")
                     .select("id, nome, turma, turno")
@@ -179,7 +100,6 @@
                     return;
                 }
 
-                // Verifica duplicata no turno
                 const { inicio, fim } = intervaloPorTurno(turno);
                 const { data: existe } = await db
                     .from("presencas")
@@ -193,7 +113,6 @@
                     return;
                 }
 
-                // Insere presença
                 const { error: errIns } = await db
                     .from("presencas")
                     .insert([{ aluno_id: id }]);
