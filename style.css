@@ -49,14 +49,13 @@ a { color: inherit; }
     background: linear-gradient(90deg, var(--verde), var(--azul));
     color: #fff;
     min-height: 70px;
-    padding: 0 20px;
+    padding: 0 2rem;
     border-bottom: 3px solid var(--amarelo);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    height: 70px;
-    overflow: hidden;
+    flex-wrap: wrap;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
