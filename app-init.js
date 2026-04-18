@@ -305,35 +305,67 @@
 
     const Boot = (() => {
 
+        // Notif stub — usado quando Notifications.js não carregou (404, bloqueio, etc.)
+        // Mantém a API completa mas sem UI. AppLog registra tudo normalmente.
+        const _notifStub = Object.freeze({
+            sucesso:   (t, m) => AppLog.info("NotifStub",  `[sucesso] ${t}${m ? " — " + m : ""}`),
+            erro:      (t, m) => AppLog.error("NotifStub", `[erro] ${t}${m ? " — " + m : ""}`),
+            aviso:     (t, m) => AppLog.warn("NotifStub",  `[aviso] ${t}${m ? " — " + m : ""}`),
+            info:      (t, m) => AppLog.info("NotifStub",  `[info] ${t}${m ? " — " + m : ""}`),
+            confirmar: ()     => Promise.resolve(false),
+            _show:     ()     => {},
+        });
+
         async function _aguardarDOM() {
             if (document.readyState !== "loading") return;
             await new Promise(r => document.addEventListener("DOMContentLoaded", r, { once: true }));
         }
 
-        async function _aguardarModuloLocal(apelido, predicate) {
+        // Aguarda um módulo crítico — lança se não chegar
+        async function _exigirModulo(apelido, predicate) {
             const ok = await _poll(predicate);
             if (!ok) {
-                throw new Error(`Módulo local "${apelido}" não carregou em ${CFG.POLL_MAX_MS}ms. Verifique se o script está incluído na página.`);
+                throw new Error(
+                    `Módulo crítico "${apelido}" não carregou em ${CFG.POLL_MAX_MS}ms. ` +
+                    `Verifique se o arquivo está no servidor e o nome está correto.`
+                );
             }
-            AppLog.info("Boot", `✓ ${apelido}`);
+            AppLog.info("Boot", `✓ ${apelido} (crítico)`);
+        }
+
+        // Aguarda um módulo opcional — instala stub se não chegar, nunca lança
+        async function _tentarModulo(apelido, predicate, instalarStub) {
+            const ok = await _poll(predicate, 3000); // timeout menor para opcionais
+            if (ok) {
+                AppLog.info("Boot", `✓ ${apelido}`);
+            } else {
+                AppLog.warn("Boot", `⚠ ${apelido} indisponível — usando substituto`);
+                instalarStub();
+            }
         }
 
         async function executar() {
             UI.setMsg("Aguardando DOM...");
             await _aguardarDOM();
 
-            UI.setMsg("Carregando módulos locais...");
+            UI.setMsg("Carregando módulos...");
 
-            await _aguardarModuloLocal("Auth",
-                () => !!global.Auth && typeof global.Auth.getSessao  === "function" &&
-                                       typeof global.Auth.init       === "function"
+            // Auth é crítico — sem ele não há controle de acesso
+            await _exigirModulo("Auth",
+                () => !!global.Auth &&
+                      typeof global.Auth.getSessao === "function" &&
+                      typeof global.Auth.init      === "function"
             );
 
-            await _aguardarModuloLocal("Notif",
-                () => !!global.Notif && typeof global.Notif.sucesso  === "function"
+            // Notif é degradável — se o arquivo não existir no servidor,
+            // o sistema continua com um stub silencioso
+            await _tentarModulo(
+                "Notif",
+                () => !!global.Notif && typeof global.Notif.sucesso === "function",
+                () => { global.Notif = _notifStub; }
             );
 
-            UI.setMsg("Inicializando módulos...");
+            UI.setMsg("Inicializando autenticação...");
             await global.Auth.init();
 
             AppLog.info("Boot", "Fase concluída");
