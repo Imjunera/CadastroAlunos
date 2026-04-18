@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Colégio Antônio Costa</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+            background: var(--fundo);
+        }
+
+        .login-card {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-radius: 18px;
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-logo-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+        }
+
+        .login-escola-nome {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1rem;
+            color: var(--texto);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .login-escola-sub {
+            font-size: 0.78rem;
+            color: var(--texto-fraco);
+            text-align: center;
+        }
+
+        .login-titulo {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.4rem;
+            color: var(--texto);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .login-form-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .login-form-group label {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--texto-fraco);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .login-form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--borda);
+            border-radius: 10px;
+            background: var(--fundo);
+            color: var(--texto);
+            font-size: 0.93rem;
+            font-family: 'DM Sans', Arial, sans-serif;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .login-form-group input:focus {
+            outline: none;
+            border-color: var(--verde);
+        }
+
+        .login-form-group input.erro {
+            border-color: #e53e3e;
+        }
+
+        .login-erro {
+            background: #fff5f5;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.83rem;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-erro.visivel {
+            display: flex;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--verde);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'DM Sans', Arial, sans-serif;
+            transition: background 0.18s, transform 0.1s;
+            margin-top: 0.5rem;
+        }
+
+        .login-btn:hover:not(:disabled) {
+            background: var(--verde-hover, #155230);
+        }
+
+        .login-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-rodape {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--texto-fraco);
+            margin-top: 1.8rem;
+        }
+
+        .senha-wrap {
+            position: relative;
+        }
+
+        .senha-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--texto-fraco);
+            padding: 0;
+            line-height: 1;
+        }
+
+        .senha-wrap input {
+            padding-right: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-logo-wrap">
+            <img src="logo.png" class="login-logo" alt="Logo" onerror="this.style.display='none'">
+            <div class="login-escola-nome">Colégio Estadual Desembargador</div>
+            <div class="login-escola-sub">Antônio F. F. da Costa — Icaraíma / PR</div>
+        </div>
+
+        <div class="login-titulo">Acesso ao Sistema</div>
+
+        <div class="login-erro" id="loginErro">
+            <span>⚠</span>
+            <span id="loginErroTxt">Usuário ou senha incorretos.</span>
+        </div>
+
+        <div class="login-form-group">
+            <label for="loginUsuario">Usuário</label>
+            <input type="text" id="loginUsuario" placeholder="Digite seu usuário" autocomplete="username"
+                   onkeydown="if(event.key==='Enter') tentarLogin()">
+        </div>
+
+        <div class="login-form-group">
+            <label for="loginSenha">Senha</label>
+            <div class="senha-wrap">
+                <input type="password" id="loginSenha" placeholder="Digite sua senha" autocomplete="current-password"
+                       onkeydown="if(event.key==='Enter') tentarLogin()">
+                <button class="senha-toggle" type="button" onclick="toggleSenha()" title="Mostrar/ocultar senha">👁</button>
+            </div>
+        </div>
+
+        <button class="login-btn" id="loginBtn" onclick="tentarLogin()">
+            Entrar
+        </button>
+
+        <div class="login-rodape">
+            Sistema de Gestão Escolar · v2.0
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // Se já tiver sessão válida, redirecionar direto
+        (async function () {
+            await Auth.init();
+            const sessao = Auth.getSessao();
+            if (sessao) {
+                const params = new URLSearchParams(window.location.search);
+                window.location.href = params.get("redirect") || "index.html";
+            }
+        })();
+
+        function toggleSenha() {
+            const inp = document.getElementById("loginSenha");
+            inp.type = inp.type === "password" ? "text" : "password";
+        }
+
+        function mostrarErro(msg) {
+            const el = document.getElementById("loginErro");
+            document.getElementById("loginErroTxt").textContent = msg;
+            el.classList.add("visivel");
+        }
+
+        function esconderErro() {
+            document.getElementById("loginErro").classList.remove("visivel");
+        }
+
+        async function tentarLogin() {
+            const btn     = document.getElementById("loginBtn");
+            const usuario = document.getElementById("loginUsuario").value.trim();
+            const senha   = document.getElementById("loginSenha").value;
+
+            esconderErro();
+
+            if (!usuario || !senha) {
+                mostrarErro("Preencha o usuário e a senha.");
+                return;
+            }
+
+            btn.disabled    = true;
+            btn.textContent = "Verificando...";
+
+            await Auth.init();
+            const sessao = await Auth.login(usuario, senha);
+
+            if (sessao) {
+                const params = new URLSearchParams(window.location.search);
+                window.location.href = params.get("redirect") || "index.html";
+            } else {
+                mostrarErro("Usuário ou senha incorretos.");
+                document.getElementById("loginSenha").value = "";
+                document.getElementById("loginUsuario").classList.add("erro");
+                document.getElementById("loginSenha").classList.add("erro");
+                btn.disabled    = false;
+                btn.textContent = "Entrar";
+
+                setTimeout(() => {
+                    document.getElementById("loginUsuario").classList.remove("erro");
+                    document.getElementById("loginSenha").classList.remove("erro");
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

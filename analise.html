@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise — Colégio Antônio Costa</title>
     <link rel="stylesheet" href="style.css">
+    <script src="auth.js" defer></script>
+    <script src="app-init.js" defer></script>
+    <script src="transitions.js" defer></script>
+    <script src="monitor.js" defer></script>
+    <script src="dev-panel.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="config.js" defer></script>
-    <script src="Notifications.js" defer></script>
+    <script src="notifications.js" defer></script>
     <script src="main.js" defer></script>
     <script src="analise.js" defer></script>
 </head>
@@ -147,5 +152,13 @@
     </div>
 
 </div>
+<script>
+        // Chamada central do AppInit — uma vez por página
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.AppInit) {
+                AppInit.inicializar(["dom", "notif", "auth", "supabase"]);
+            }
+        });
+    </script>
 </body>
 </html>

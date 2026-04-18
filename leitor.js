@@ -255,14 +255,14 @@ async function registrar(id) {
             .select("id, nome, turma, turno")
             .eq("id", id)
             .single();
-
+ 
         if (errAluno || !aluno) {
             mostrarModal({ tipo: "erro" });
             Notif.erro("Aluno não encontrado", "ID não corresponde a nenhum aluno.");
+            ScannerVisual.confirm("erro");          // ← NOVO
             return false;
         }
-
-        // Verifica duplicata no dia inteiro
+ 
         const hoje = new Date().toISOString().split("T")[0];
         const { data: existe } = await db
             .from("presencas")
@@ -270,36 +270,38 @@ async function registrar(id) {
             .eq("aluno_id", id)
             .gte("horario_chegada", hoje + "T00:00:00")
             .lte("horario_chegada", hoje + "T23:59:59");
-
+ 
         if (existe && existe.length > 0) {
             mostrarModal({ tipo: "duplicado", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno });
+            ScannerVisual.confirm("duplicado");     // ← NOVO
             return false;
         }
-
-        // Calcula status de atraso com base no turno do aluno
+ 
         const status = calcularStatus(aluno.turno);
-
+ 
         const { error: errIns } = await db
             .from("presencas")
             .insert([{ aluno_id: id, status }]);
-
+ 
         if (errIns) throw errIns;
-
+ 
         mostrarModal({ tipo: "sucesso", nome: aluno.nome, turma: aluno.turma, turno: aluno.turno, status });
-
+        ScannerVisual.confirm(status);              // ← NOVO: 'presente' ou 'atrasado'
+ 
         if (status === "atrasado") {
             Notif.aviso(`${aluno.nome} — Atrasado`, `Chegou após o limite do turno ${aluno.turno}.`);
         } else {
             Notif.sucesso("Presença registrada", `${aluno.nome} chegou no horário.`);
         }
-
+ 
         carregarPresencas();
         return true;
-
+ 
     } catch (err) {
         console.error(err);
         Notif.erro("Erro ao registrar presença", err.message);
         mostrarModal({ tipo: "erro" });
+        ScannerVisual.confirm("erro");              // ← NOVO
         return false;
     }
 }
@@ -373,27 +375,35 @@ async function gerarRelatorioPresencas() {
 
 // ===================== CÂMERA =====================
 let html5QrCode = null;
+let _cameraAtiva = false;
 
 async function iniciarCamera() {
     const status = document.getElementById("scannerStatus");
     const btn    = document.getElementById("btnIniciar");
-
+    const idle   = document.getElementById("scannerIdle");
+ 
     btn.disabled = true;
     status.className = "scanner-status";
     status.innerText = "Solicitando permissão...";
-
+ 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         stream.getTracks().forEach(t => t.stop());
-
+ 
         status.className = "scanner-status ok";
         status.innerText  = "✅ Câmera ativa — aponte para o QR Code";
-
-        html5QrCode = new Html5Qrcode("reader");
+ 
+        // Reutilizar instância se existir (evita criar nova)
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+ 
+        const wrappedCallback = ScannerVisual.wrapCallback(onScanSuccess);
+ 
         await html5QrCode.start(
             { facingMode: "environment" },
             {
-                fps: 15,
+                fps: 20,
                 qrbox: (w, h) => {
                     const s = Math.floor(Math.min(w, h) * 0.75);
                     return { width: s, height: s };
@@ -401,12 +411,18 @@ async function iniciarCamera() {
                 aspectRatio: 1.0,
                 experimentalFeatures: { useBarCodeDetectorIfSupported: true }
             },
-            onScanSuccess
+            wrappedCallback,
+            ScannerVisual.onScanFailure
         );
+ 
+        ScannerVisual.attachToReader();
+        _cameraAtiva = true;
 
+        if (idle) idle.style.display = "none";
         btn.style.display = "none";
+ 
         Notif.sucesso("Câmera ativa", "Aponte o QR Code do aluno para a câmera.");
-
+ 
     } catch (err) {
         status.className = "scanner-status erro";
         if (err.name === "NotAllowedError")
@@ -415,11 +431,54 @@ async function iniciarCamera() {
             status.innerText = "❌ Câmera não encontrada.";
         else
             status.innerText = "❌ " + (err.message || "Erro desconhecido.");
-
+ 
         Notif.erro("Erro na câmera", status.innerText.replace("❌ ", ""));
         btn.disabled = false;
+        _cameraAtiva = false;
     }
 }
+
+async function pausarCamera() {
+    if (!html5QrCode || !_cameraAtiva) return;
+    try {
+        await html5QrCode.pause(true);  // true = pausa o vídeo também
+        ScannerVisual.reset();
+        AppLog?.info("Câmera", "Câmera pausada (aba inativa)");
+    } catch (_) {}
+}
+
+async function retormarCamera() {
+    if (!html5QrCode || !_cameraAtiva) return;
+    try {
+        await html5QrCode.resume();
+        ScannerVisual.attachToReader();
+        AppLog?.info("Câmera", "Câmera retomada");
+    } catch (_) {}
+}
+
+// Pausar câmera quando aba fica em segundo plano
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        pausarCamera();
+    } else {
+        retormarCamera();
+    }
+});
+
+// Verificar integridade do canvas e recriar se necessário
+function verificarIntegridadeCanvas() {
+    const canvas = document.getElementById("scannerCanvas");
+    const wrap   = document.getElementById("scannerWrap");
+    if (!canvas && wrap && _cameraAtiva) {
+        AppLog?.warn("Canvas", "Canvas do scanner ausente — recriando");
+        const novoCanvas = document.createElement("canvas");
+        novoCanvas.id = "scannerCanvas";
+        wrap.appendChild(novoCanvas);
+        if (html5QrCode) ScannerVisual.attachToReader();
+    }
+}
+
+setInterval(verificarIntegridadeCanvas, 10000);
 
 // ===================== HELPERS =====================
 function escHtml(str) {
@@ -431,7 +490,21 @@ function escHtml(str) {
 }
 
 // ===================== INICIAR =====================
-atualizarTurnoBanner();
-carregarPresencas();
-verificarTrocaTurno();
-setInterval(verificarTrocaTurno, 60 * 1000);
+function _iniciarLeitor() {
+    atualizarTurnoBanner();
+    carregarPresencas();
+    verificarTrocaTurno();
+    setInterval(verificarTrocaTurno, 60 * 1000);
+}
+
+// Escuta app:pronto (disparado pelo AppInit no HTML)
+// Fallback se AppInit não estiver presente
+if (window.AppInit) {
+    document.addEventListener("app:pronto", _iniciarLeitor, { once: true });
+} else {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _iniciarLeitor);
+    } else {
+        _iniciarLeitor();
+    }
+}

@@ -7,13 +7,18 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a6641">
     <link rel="stylesheet" href="style.css">
+    <script src="auth.js" defer></script>
+    <script src="app-init.js" defer></script>
+    <script src="transitions.js" defer></script>
+    <script src="monitor.js" defer></script>
+    <script src="dev-panel.js" defer></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="config.js" defer></script>
-    <script src="Notifications.js" defer></script>
+    <script src="notifications.js" defer></script>
+    <script src="scanner-visual.js" defer></script>
     <script src="leitor.js" defer></script>
-    <script src="main.js" defer></script>
     <script>
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
@@ -74,15 +79,35 @@
     <div class="leitor-grid">
 
         <!-- SCANNER -->
-        <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
+        <div class="card scanner-card" style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
             <div class="card-title" style="align-self:flex-start;">📷 Scanner</div>
-            <div id="reader"></div>
+
+            <!--
+                Wrapper com position:relative para empilhar:
+                  1. #reader  — vídeo do html5-qrcode (fica invisível, mas necessário para leitura)
+                  2. #scanner-canvas — nossa camada visual renderizada por scanner-visual.js
+            -->
+            <div class="scanner-wrap" id="scannerWrap">
+                <div id="reader"></div>
+                <canvas id="scannerCanvas"></canvas>
+
+                <!-- Overlay de confirmação (flash verde ao ler QR válido) -->
+                <div class="scan-confirm-overlay" id="scanConfirmOverlay"></div>
+
+                <!-- Botão de ativar fica sobre o wrap quando câmera desligada -->
+                <div class="scanner-idle-screen" id="scannerIdle">
+                    <div class="scanner-idle-icon">📷</div>
+                    <p class="scanner-idle-txt">Câmera desativada</p>
+                    <button class="btn btn-primary" id="btnIniciar" onclick="iniciarCamera()">
+                        Ativar câmera
+                    </button>
+                </div>
+            </div>
+
             <div class="scanner-status" id="scannerStatus">
                 Clique no botão para ativar a câmera
             </div>
-            <button class="btn btn-primary" id="btnIniciar" onclick="iniciarCamera()" style="width:100%;max-width:280px;">
-                📸 Ativar câmera
-            </button>
+
             <button class="btn btn-secondary btn-sm" onclick="gerarRelatorioPresencas()" style="width:100%;max-width:280px;">
                 📄 Exportar presenças
             </button>
@@ -135,5 +160,13 @@
     </div>
 </div>
 
+<script>
+        // Chamada central do AppInit — uma vez por página
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.AppInit) {
+                AppInit.inicializar(["dom", "notif", "auth", "supabase"]);
+            }
+        });
+    </script>
 </body>
 </html>

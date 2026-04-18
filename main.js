@@ -334,5 +334,18 @@ function escHtml(str) {
 }
 
 // ===================== INICIAR =====================
-carregarAlunos().then(() => listar());
-carregarPresentesHoje();
+function _iniciarMain() {
+    carregarAlunos().then(() => listar());
+    carregarPresentesHoje();
+}
+
+// Escuta app:pronto (disparado pelo AppInit no HTML)
+if (window.AppInit) {
+    document.addEventListener("app:pronto", _iniciarMain, { once: true });
+} else {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _iniciarMain);
+    } else {
+        _iniciarMain();
+    }
+}

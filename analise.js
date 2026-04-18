@@ -336,4 +336,18 @@ function escHtml(str) {
 }
 
 // ===================== INICIAR =====================
-carregarAnalise();
+function _iniciarAnalise() {
+    carregarAnalise();
+}
+
+// Escuta app:pronto (disparado pelo AppInit no HTML)
+// Fallback se AppInit não estiver presente
+if (window.AppInit) {
+    document.addEventListener("app:pronto", _iniciarAnalise, { once: true });
+} else {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _iniciarAnalise);
+    } else {
+        _iniciarAnalise();
+    }
+}

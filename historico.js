@@ -265,4 +265,18 @@ function escHtml(str) {
 }
 
 // ===================== INICIAR =====================
-carregarHistorico();
+function _iniciarHistorico() {
+    carregarHistorico();
+}
+
+// Escuta app:pronto (disparado pelo AppInit no HTML)
+// Fallback se AppInit não estiver presente
+if (window.AppInit) {
+    document.addEventListener("app:pronto", _iniciarHistorico, { once: true });
+} else {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _iniciarHistorico);
+    } else {
+        _iniciarHistorico();
+    }
+}

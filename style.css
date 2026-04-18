@@ -470,12 +470,120 @@ tbody td {
 
 /* ===================== SCANNER ===================== */
 #reader {
-    width: 100%;
-    max-width: 100%; /* Era 380px fixo — agora fluido */
-    margin: 0 auto;
-    border-radius: var(--radius);
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
     overflow: hidden;
-    border: 2px solid var(--verde-hover);
+    background: transparent;
+}
+
+/* Esconde todos os controles nativos do html5-qrcode que não usamos */
+#reader > div:not(:has(video)),
+#reader #html5-qrcode-anchor-scan-type-change,
+#reader #html5-qrcode-button-camera-permission,
+#reader #html5-qrcode-button-camera-start,
+#reader #html5-qrcode-button-camera-stop,
+#reader select,
+#reader img[alt="Info icon"],
+#reader span {
+    display: none !important;
+}
+ 
+/* O vídeo dentro do reader ocupa 100% */
+#reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    display: block;
+}
+ 
+#scannerCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    border-radius: var(--radius);
+    z-index: 2;
+}
+
+
+.scan-confirm-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: var(--radius);
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+ 
+/* ── Tela idle (antes da câmera ativar) ── */
+.scanner-idle-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    background: linear-gradient(160deg, #0d1a12 0%, #0a0f0d 100%);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+ 
+.scanner-idle-icon {
+    font-size: 2.8rem;
+    opacity: 0.5;
+    animation: idleFloat 3s ease-in-out infinite;
+}
+ 
+@keyframes idleFloat {
+    0%, 100% { transform: translateY(0);    opacity: 0.5; }
+    50%       { transform: translateY(-6px); opacity: 0.75; }
+}
+ 
+.scanner-idle-txt {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+ 
+.scanner-idle-screen .btn-primary {
+    background: var(--verde);
+    font-size: 0.85rem;
+    padding: 9px 22px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(26,102,65,0.4);
+}
+ 
+.scanner-idle-screen .btn-primary:hover {
+    background: var(--verde-hover);
+    box-shadow: 0 0 28px rgba(26,102,65,0.6);
+}
+ 
+/* ── Status text abaixo do scanner ── */
+.scanner-status {
+    font-size: 0.8rem;
+    color: var(--texto-fraco);
+    text-align: center;
+    min-height: 20px;
+    transition: color 0.3s ease;
+    letter-spacing: 0.02em;
+}
+ 
+.scanner-status.ok   {
+    color: var(--verde);
+    font-weight: 600;
+}
+ 
+.scanner-status.erro {
+    color: var(--vermelho);
 }
 
 /* ===================== HORARIO CHIP ===================== */
@@ -540,6 +648,144 @@ tbody td {
     grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
+}
+
+.scanner-card {
+    padding: 1.4rem !important;
+}
+
+.scanner-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #0a0a0a;
+    box-shadow: var(--sombra-md);
+}
+
+.scanner-wrap.ativo {
+    box-shadow:
+        0 0 0 2px var(--verde),
+        0 0 20px rgba(26,102,65,0.25),
+        var(--sombra-md);
+    transition: box-shadow 0.4s ease;
+}
+
+.scanner-wrap.confirmar-ok {
+    animation: confirmBorderOk 0.6s ease forwards;
+}
+ 
+.scanner-wrap.confirmar-erro {
+    animation: confirmBorderErro 0.6s ease forwards;
+}
+ 
+.scanner-wrap.confirmar-aviso {
+    animation: confirmBorderAviso 0.6s ease forwards;
+}
+ 
+@keyframes confirmBorderOk {
+    0%   { box-shadow: 0 0 0 4px var(--verde),    0 0 40px rgba(26,102,65,0.6); }
+    100% { box-shadow: 0 0 0 2px var(--verde),    0 0 20px rgba(26,102,65,0.2); }
+}
+ 
+@keyframes confirmBorderErro {
+    0%   { box-shadow: 0 0 0 4px var(--vermelho), 0 0 40px rgba(184,50,50,0.6); }
+    100% { box-shadow: 0 0 0 2px var(--verde),    0 0 20px rgba(26,102,65,0.2); }
+}
+ 
+@keyframes confirmBorderAviso {
+    0%   { box-shadow: 0 0 0 4px var(--amarelo),  0 0 40px rgba(200,168,75,0.6); }
+    100% { box-shadow: 0 0 0 2px var(--verde),    0 0 20px rgba(26,102,65,0.2); }
+}
+ 
+/* ── Refinamento: o leitor-grid ganha um alinhamento mais profissional ── */
+.leitor-grid {
+    align-items: start;
+}
+ 
+/* ── Indicador de zoom digital (overlay de texto) ──
+   Aparece no canto superior do scanner-wrap quando zoom > 1.2 */
+.zoom-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    background: rgba(0,0,0,0.55);
+    color: rgba(255,255,255,0.85);
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+ 
+.zoom-indicator.visivel {
+    opacity: 1;
+}
+ 
+/* ── Indicador "QR detectado" no canto inferior ── */
+.qr-detected-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    background: rgba(26,102,65,0.85);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
+ 
+.qr-detected-badge.visivel {
+    opacity: 1;
+}
+ 
+/* ── Responsive: mobile ── */
+@media (max-width: 640px) {
+    .scanner-wrap {
+        max-width: 100%;
+    }
+ 
+    .scanner-idle-icon {
+        font-size: 2rem;
+    }
+ 
+    .scanner-card {
+        padding: 1rem !important;
+    }
+}
+ 
+/* ── Melhoria: esconde os controles de câmera do html5-qrcode com seletor mais amplo ──
+   (compatibilidade com versões ligeiramente diferentes da lib) */
+#reader__dashboard_section_csr,
+#reader__dashboard_section_swaplink,
+#reader__status_span,
+#reader__camera_selection,
+#reader__filescan_input,
+#reader__header_message,
+#html5-qrcode-button-camera-stop,
+#html5-qrcode-button-camera-permission,
+#html5-qrcode-anchor-scan-type-change {
+    display: none !important;
+}
+ 
+/* ── Garante que o wrapper do reader não tem borda própria do html5-qrcode ── */
+#reader > div {
+    border: none !important;
+    padding: 0 !important;
 }
 
 .scanner-status {
@@ -1072,3 +1318,46 @@ tbody td {
     transition: border-color 0.2s;
 }
 .select-filtro:focus { border-color: var(--primaria); }
+/* ===================== HEADER USUÁRIO (AUTH) ===================== */
+.header-usuario {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 8px;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255,255,255,0.25);
+}
+
+.header-usuario-nome {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.btn-logout {
+    padding: 5px 12px;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background 0.18s;
+    white-space: nowrap;
+}
+.btn-logout:hover {
+    background: rgba(255,255,255,0.28);
+}
+
+/* ===================== VARIÁVEIS FALTANTES ===================== */
+:root {
+    --card:     var(--branco);
+    --texto:    var(--preto);
+    --primaria: var(--verde);
+    --sucesso:  var(--verde);
+    --aviso:    var(--amarelo);
+    --danger:   var(--vermelho);
+}
